@@ -2,9 +2,8 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { connectWallet } from './utils/wallet';
 import { ethers } from 'ethers';
 import Webcam from 'react-webcam';
-import { pinata } from './utils/config'; 
-import { contractABI, contractAddress } from './utils/contract'; 
-import './App.css';
+import { pinata } from './utils/config';
+import { contractABI, contractAddress } from './utils/contract';
 
 function App() {
   const [walletConnected, setWalletConnected] = useState(false);
@@ -17,6 +16,7 @@ function App() {
   const [uploadUrl, setUploadUrl] = useState('');
   const [reportHistory, setReportHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [isWebcamOn, setIsWebcamOn] = useState(true);
   const webcamRef = useRef(null);
 
   const handleConnectWallet = async () => {
@@ -40,8 +40,14 @@ function App() {
     const imageSrc = webcamRef.current.getScreenshot();
     if (imageSrc) {
       setCapturedImage(imageSrc);
+      setIsWebcamOn(false); // Stop the webcam after capture
     }
   }, [webcamRef]);
+
+  const restartWebcam = () => {
+    setCapturedImage(null);
+    setIsWebcamOn(true); // Restart the webcam
+  };
 
   const handleUpload = async () => {
     if (!capturedImage) return;
@@ -93,33 +99,56 @@ function App() {
     }
   };
 
+  const checkIfOwner = async (signer) => {
+    try {
+      const contract = new ethers.Contract(contractAddress, contractABI, signer);
+      const ownerAddress = await contract.owner();
+      const signerAddress = await signer.getAddress();
+      setIsOwner(ownerAddress.toLowerCase() === signerAddress.toLowerCase());
+    } catch (error) {
+      console.error("Error checking owner status:", error);
+    }
+  };
+
   return (
-    <div className="app-container">
-      <h1>Traffix</h1>
+    <div className="min-h-screen bg-gradient-to-r from-blue-400 via-teal-400 to-green-400 text-white flex flex-col items-center justify-center p-4 sm:p-8">
+      <h1 className="text-4xl font-bold mb-8 animate-fade-in text-center">Traffix</h1>
+  
       {!walletConnected ? (
-        <button className="connect-wallet-button" onClick={handleConnectWallet} disabled={loading}>
+        <button
+          className={`bg-teal-500 hover:bg-teal-600 px-6 py-2 rounded-lg text-white transition-all duration-300 ${loading ? 'animate-pulse' : ''}`}
+          onClick={handleConnectWallet}
+          disabled={loading}
+        >
           {loading ? 'Connecting...' : 'Connect Wallet'}
         </button>
       ) : (
-        <>
-          <p>Connected to wallet: {walletAddress}</p>
+        <div className="w-full max-w-lg">
+          <p className="text-lg mb-4 text-center">Connected to wallet: {walletAddress}</p>
+  
           {isOwner ? (
-            <div className="owner-interface">
-              <h2>Owner Interface</h2>
-              <button className="verify-reports-button">Verify Reports</button>
+            <div className="bg-white text-black rounded-lg p-4 mb-4 shadow-lg animate-slide-in">
+              <h2 className="text-2xl font-semibold mb-2">Owner Interface</h2>
+              <button className="bg-teal-500 hover:bg-teal-600 px-4 py-2 rounded-lg text-white transition-all duration-300 w-full">Verify Reports</button>
             </div>
           ) : (
-            <div className="user-interface">
-              <h2>User Interface</h2>
-              <button onClick={() => setShowHistory(!showHistory)}>Toggle History</button>
+            <div className="bg-white text-black rounded-lg p-4 shadow-lg animate-slide-in">
+              <h2 className="text-2xl font-semibold mb-2 text-center">User Interface</h2>
+              <button
+                className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg text-white transition-all duration-300 mb-4 w-full"
+                onClick={() => setShowHistory(!showHistory)}
+              >
+                Toggle History
+              </button>
+  
               {showHistory && (
-                <div className="history-section">
-                  <h3>Your Report History</h3>
+                <div className="bg-gray-100 p-4 rounded-lg mb-4">
+                  <h3 className="text-lg font-semibold mb-2 text-center">Your Report History</h3>
                   {reportHistory.length === 0 ? (
                     <p>No reports found.</p>
                   ) : (
                     reportHistory.map(report => (
-                      <div key={report.id}>
+                      <div key={report.id} className="border p-2 rounded-lg mb-2 shadow-md">
                         <p>ID: {report.id}</p>
                         <p>Description: {report.description}</p>
                         <p>Location: {report.location}</p>
@@ -131,37 +160,63 @@ function App() {
                   )}
                 </div>
               )}
-              <div className="webcam-section">
-                <Webcam
-                  audio={false}
-                  ref={webcamRef}
-                  screenshotFormat="image/jpeg"
-                  width="300px" // Set a specific width for the webcam
-                />
-                <button className="capture-button" onClick={capture}>Capture Photo</button>
+  
+              <div className="flex flex-col items-center">
+                {isWebcamOn && (
+                  <Webcam
+                    audio={false}
+                    ref={webcamRef}
+                    screenshotFormat="image/jpeg"
+                    className="mb-4 w-full rounded-lg shadow-md"
+                    style={{ maxWidth: '100%' }}
+                  />
+                )}
+                {capturedImage ? (
+                  <>
+                    <img src={capturedImage} alt="Captured" className="mb-4 w-full rounded-lg shadow-lg animate-fade-in" />
+                    <button
+                      className="bg-teal-500 hover:bg-teal-600 px-4 py-2 rounded-lg text-white transition-all duration-300 mb-4 w-full"
+                      onClick={handleUpload}
+                    >
+                      Upload to IPFS
+                    </button>
+                    <button
+                      className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-white transition-all duration-300 w-full"
+                      onClick={restartWebcam}
+                    >
+                      Capture Again
+                    </button>
+                    {uploadUrl && (
+                      <button
+                        className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg text-white transition-all duration-300 mt-4 w-full"
+                        onClick={handleSubmitReport}
+                      >
+                        Submit Report
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <button
+                    className="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-lg text-white transition-all duration-300 mb-4 w-full"
+                    onClick={capture}
+                  >
+                    Capture Photo
+                  </button>
+                )}
+  
+                {uploadUrl && (
+                  <div className="bg-gray-100 p-2 rounded-lg shadow-lg mt-4 w-full">
+                    <p>IPFS URL: <a href={uploadUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">{uploadUrl}</a></p>
+                  </div>
+                )}
               </div>
-              {capturedImage && (
-                <div className="captured-image-section">
-                  <h3>Captured Image</h3>
-                  <img src={capturedImage} alt="Captured" width="50%" />
-                  <button className="upload-button" onClick={handleUpload}>Upload to IPFS</button>
-                  {uploadUrl && (
-                    <button onClick={handleSubmitReport}>Submit Report</button>
-                  )}
-                </div>
-              )}
-              {uploadUrl && (
-                <div className="uploaded-image-section">
-                  <h3>Uploaded Image</h3>
-                  <a href={uploadUrl} target="_blank" rel="noopener noreferrer">{uploadUrl}</a>
-                </div>
-              )}
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
+  ;
 }
 
 export default App;
