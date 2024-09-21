@@ -252,12 +252,15 @@ function App() {
                 )}
 
                 {/* Switch Camera Button */}
-                <button
-                  className="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-lg text-white transition-all duration-300 mb-4 w-full"
-                  onClick={toggleCamera}
-                >
-                  Switch to {isFrontCamera ? 'Back' : 'Front'} Camera
-                </button>
+                {!capturedImage && ( // Only show this button if no image has been captured
+  <button
+    className="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-lg text-white transition-all duration-300 mb-4 w-full"
+    onClick={toggleCamera}
+  >
+    Switch to {isFrontCamera ? 'Back' : 'Front'} Camera
+  </button>
+)}
+
 
                 {/* Modal for displaying the IPFS URL */}
                 {isModalOpen && (
