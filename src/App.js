@@ -17,6 +17,7 @@ function App() {
   const [reportHistory, setReportHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [isWebcamOn, setIsWebcamOn] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false); // New state for modal
   const webcamRef = useRef(null);
 
   const handleConnectWallet = async () => {
@@ -39,7 +40,6 @@ function App() {
       setLoading(false);
     }
   };
-  
 
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current.getScreenshot();
@@ -115,10 +115,15 @@ function App() {
     }
   };
 
+  // Function to handle modal open/close
+  const toggleModal = () => {
+    setIsModalOpen(!isModalOpen);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-r from-blue-400 via-teal-400 to-green-400 text-white flex flex-col items-center justify-center p-4 sm:p-8">
       <h1 className="text-4xl font-bold mb-8 animate-fade-in text-center">Traffix</h1>
-  
+
       {!walletConnected ? (
         <button
           className={`bg-teal-500 hover:bg-teal-600 px-6 py-2 rounded-lg text-white transition-all duration-300 ${loading ? 'animate-pulse' : ''}`}
@@ -130,7 +135,7 @@ function App() {
       ) : (
         <div className="w-full max-w-lg">
           <p className="text-lg mb-4 text-center">Connected to wallet: {walletAddress}</p>
-  
+
           {isOwner ? (
             <div className="bg-white text-black rounded-lg p-4 mb-4 shadow-lg animate-slide-in">
               <h2 className="text-2xl font-semibold mb-2">Owner Interface</h2>
@@ -145,7 +150,7 @@ function App() {
               >
                 Toggle History
               </button>
-  
+
               {showHistory && (
                 <div className="bg-gray-100 p-4 rounded-lg mb-4">
                   <h3 className="text-lg font-semibold mb-2 text-center">Your Report History</h3>
@@ -165,7 +170,7 @@ function App() {
                   )}
                 </div>
               )}
-  
+
               <div className="flex flex-col items-center">
                 {isWebcamOn && (
                   <Webcam
@@ -192,12 +197,22 @@ function App() {
                       Capture Again
                     </button>
                     {uploadUrl && (
-                      <button
-                        className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg text-white transition-all duration-300 mt-4 w-full"
-                        onClick={handleSubmitReport}
-                      >
-                        Submit Report
-                      </button>
+                      <>
+                        <button
+                          className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg text-white transition-all duration-300 mt-4 w-full"
+                          onClick={handleSubmitReport}
+                        >
+                          Submit Report
+                        </button>
+
+                        {/* Button to trigger modal */}
+                        <button
+                          className="bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded-lg text-white transition-all duration-300 mt-4 w-full"
+                          onClick={toggleModal}
+                        >
+                          View IPFS URL
+                        </button>
+                      </>
                     )}
                   </>
                 ) : (
@@ -208,12 +223,32 @@ function App() {
                     Capture Photo
                   </button>
                 )}
-  
-                {uploadUrl && (
-                  <div className="bg-gray-100 p-2 rounded-lg shadow-lg mt-4 w-full">
-                    <p>IPFS URL: <a href={uploadUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">{uploadUrl}</a></p>
-                  </div>
-                )}
+
+                {/* Modal for displaying the IPFS URL */}
+                {isModalOpen && (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white text-black p-6 rounded-lg shadow-lg max-w-md w-full">
+      <h2 className="text-xl font-semibold mb-4">IPFS URL</h2>
+      <p className="break-all mb-4">
+        <a
+          href={uploadUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 underline"
+        >
+          {uploadUrl}
+        </a>
+      </p>
+      <button
+        className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg text-white transition-all duration-300 w-full"
+        onClick={toggleModal}
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
+
               </div>
             </div>
           )}
@@ -221,7 +256,6 @@ function App() {
       )}
     </div>
   );
-  ;
 }
 
 export default App;
