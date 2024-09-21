@@ -3,12 +3,11 @@ import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import LandingPage from './LandingPage'; // Import the LandingPage
 import AppContent from './AppContent';  // Import the new AppContent
 
-// Conditionally set basename for production (for GitHub Pages or any subpath hosting)
-const basename = process.env.NODE_ENV === 'production' ? '/ipfs' : '/';
+
 
 function App() {
   return (
-    <Router basename={basename}>
+    <Router>
       <Routes>
         {/* Define route for the LandingPage */}
         <Route path="/" element={<LandingPage />} />
