@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { motion } from 'framer-motion';
 import OwnerInterface from './components/OwnerInterface';
 import UserInterface from './components/UserInterface';
 import { connectWallet } from './utils/wallet';
 import { contractABI, contractAddress } from './utils/contract';
+import { Wallet, User, Shield } from 'lucide-react';
 
 function AppContent() {
   const [walletConnected, setWalletConnected] = useState(false);
@@ -59,26 +61,67 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-400 via-teal-400 to-green-400 text-white flex flex-col items-center justify-center p-4 sm:p-8">
-      <h1 className="text-4xl font-bold mb-8 animate-fade-in text-center">Traffix</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col items-center justify-center p-4 sm:p-8">
+      <motion.h1 
+        className="text-5xl font-bold mb-12 text-indigo-800"
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        Traffix
+      </motion.h1>
 
       {!walletConnected ? (
-        <button
-          className={`bg-teal-500 hover:bg-teal-600 px-6 py-2 rounded-lg text-white transition-all duration-300 ${loading ? 'animate-pulse' : ''}`}
-          onClick={handleConnectWallet}
-          disabled={loading}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
         >
-          {loading ? 'Connecting...' : 'Connect Wallet'}
-        </button>
+          <motion.button
+            className={`bg-indigo-600 hover:bg-indigo-700 px-8 py-4 rounded-full text-white text-lg font-semibold transition-all duration-300 flex items-center ${loading ? 'animate-pulse' : ''}`}
+            onClick={handleConnectWallet}
+            disabled={loading}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Wallet className="mr-2" size={24} />
+            {loading ? 'Connecting...' : 'Connect Wallet'}
+          </motion.button>
+        </motion.div>
       ) : (
-        <div className="w-full max-w-lg">
-          <p className="text-lg mb-4 text-center">Connected to wallet: {walletAddress}</p>
+        <motion.div 
+          className="w-full max-w-2xl bg-white rounded-lg shadow-xl p-8"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <div className="flex items-center justify-center mb-6">
+            <User className="text-indigo-600 mr-2" size={24} />
+            <p className="text-lg text-gray-700">Connected to wallet: <span className="font-semibold">{walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}</span></p>
+          </div>
           {isOwner ? (
-            <OwnerInterface />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="flex items-center justify-center mb-4">
+                <Shield className="text-indigo-600 mr-2" size={24} />
+                <h2 className="text-2xl font-bold text-indigo-800">Owner Dashboard</h2>
+              </div>
+              <OwnerInterface />
+            </motion.div>
           ) : (
-            <UserInterface walletAddress={walletAddress} signer={signer} />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <h2 className="text-2xl font-bold text-indigo-800 mb-4 text-center">User Dashboard</h2>
+              <UserInterface walletAddress={walletAddress} signer={signer} />
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       )}
     </div>
   );

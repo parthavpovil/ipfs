@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import Webcam from 'react-webcam';
+import { motion } from 'framer-motion';
+import { Camera, RotateCcw, Upload, Send, Eye, RefreshCw } from 'lucide-react';
 import Modal from './Modal';
 import { pinata } from '../utils/config';
 import { ethers } from 'ethers';
@@ -12,7 +14,8 @@ function WebcamCapture({ walletAddress, signer }) {
   const [uploadUrl, setUploadUrl] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFrontCamera, setIsFrontCamera] = useState(true);
-  const [isUploading, setIsUploading] = useState(false); // Track upload status
+  const [isUploading, setIsUploading] = useState(false);
+  const [isUploaded, setIsUploaded] = useState(false); // Track upload status
 
   const videoConstraints = {
     facingMode: isFrontCamera ? 'user' : { exact: 'environment' },
@@ -28,7 +31,7 @@ function WebcamCapture({ walletAddress, signer }) {
 
   const handleUpload = async () => {
     if (!capturedImage) return;
-    setIsUploading(true); // Start uploading
+    setIsUploading(true);
     try {
       const response = await fetch(capturedImage);
       const blob = await response.blob();
@@ -40,11 +43,12 @@ function WebcamCapture({ walletAddress, signer }) {
       });
       const result = uploadResponse.data;
       const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`;
-      setUploadUrl(ipfsUrl); // Set upload URL after success
+      setUploadUrl(ipfsUrl);
+      setIsUploaded(true); // Mark as uploaded
     } catch (error) {
       console.error('Error uploading file to IPFS:', error);
     } finally {
-      setIsUploading(false); // End uploading
+      setIsUploading(false);
     }
   };
 
@@ -64,8 +68,20 @@ function WebcamCapture({ walletAddress, signer }) {
     setIsFrontCamera((prev) => !prev);
   };
 
+  const handleRecapture = () => {
+    setCapturedImage(null);
+    setIsWebcamOn(true);
+    setIsUploaded(false); // Reset upload status for new capture
+  };
+
   return (
-    <div className="flex flex-col items-center">
+    <motion.div 
+      className="flex flex-col items-center bg-white rounded-lg shadow-xl p-6 max-w-md w-full"
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8 }}
+    >
+      <h2 className="text-2xl font-bold text-indigo-800 mb-6">Capture Evidence</h2>
       {isWebcamOn && (
         <Webcam
           audio={false}
@@ -76,46 +92,89 @@ function WebcamCapture({ walletAddress, signer }) {
         />
       )}
       {capturedImage ? (
-        <>
+        <motion.div 
+          className="w-full space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
           <img src={capturedImage} alt="Captured" className="mb-4 w-full rounded-lg shadow-lg" />
-          <button
-            className={`bg-teal-500 hover:bg-teal-600 px-4 py-2 rounded-lg text-white mb-4 w-full ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={handleUpload}
-            disabled={isUploading} // Disable button while uploading
-          >
-            {isUploading ? 'Uploading...' : 'Upload to IPFS'}
-          </button>
 
-          {/* Conditionally render Submit Report and View IPFS URL buttons */}
+          {!isUploaded && ( // Conditionally render upload button
+            <motion.button
+              className={`bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-full text-white w-full flex items-center justify-center ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={handleUpload}
+              disabled={isUploading}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Upload className="mr-2" size={20} />
+              {isUploading ? 'Uploading...' : 'Upload to IPFS'}
+            </motion.button>
+          )}
+
           {uploadUrl && (
             <>
-              <button
-                className="bg-green-500 hover:bg-green-600 px-4 py-2 rounded-lg text-white mb-4 w-full"
+              <motion.button
+                className="bg-green-500 hover:bg-green-600 px-6 py-3 rounded-full text-white w-full flex items-center justify-center"
                 onClick={handleSubmitReport}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
+                <Send className="mr-2" size={20} />
                 Submit Report
-              </button>
-              <button
-                className="bg-gray-500 hover:bg-gray-600 px-4 py-2 rounded-lg text-white w-full"
+              </motion.button>
+              <motion.button
+                className="bg-blue-500 hover:bg-blue-600 px-6 py-3 rounded-full text-white w-full flex items-center justify-center"
                 onClick={() => setIsModalOpen(true)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
+                <Eye className="mr-2" size={20} />
                 View IPFS URL
-              </button>
+              </motion.button>
             </>
           )}
-        </>
+
+          <motion.button
+            className="bg-red-500 hover:bg-red-600 px-6 py-3 rounded-full text-white w-full flex items-center justify-center"
+            onClick={handleRecapture}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <RotateCcw className="mr-2" size={20} />
+            Recapture Photo
+          </motion.button>
+        </motion.div>
       ) : (
-        <button className="bg-blue-500 mb-4 hover:bg-blue-600 px-4 py-2 rounded-lg text-white w-full" onClick={capture}>
-          Capture Photo
-        </button>
-      )}
-      {!capturedImage && (
-        <button className="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-lg text-white mb-4 w-full" onClick={toggleCamera}>
-          Switch to {isFrontCamera ? 'Back' : 'Front'} Camera
-        </button>
+        <motion.div 
+          className="w-full space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
+          <motion.button 
+            className="bg-indigo-600 hover:bg-indigo-700 px-6 py-3 rounded-full text-white w-full flex items-center justify-center"
+            onClick={capture}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Camera className="mr-2" size={20} />
+            Capture Photo
+          </motion.button>
+          <motion.button 
+            className="bg-yellow-500 hover:bg-yellow-600 px-6 py-3 rounded-full text-white w-full flex items-center justify-center"
+            onClick={toggleCamera}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <RefreshCw className="mr-2" size={20} />
+            Switch to {isFrontCamera ? 'Back' : 'Front'} Camera
+          </motion.button>
+        </motion.div>
       )}
       {isModalOpen && <Modal uploadUrl={uploadUrl} closeModal={() => setIsModalOpen(false)} />}
-    </div>
+    </motion.div>
   );
 }
 
