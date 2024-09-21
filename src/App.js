@@ -23,14 +23,19 @@ function App() {
   const handleConnectWallet = async () => {
     setLoading(true);
     try {
-      if (typeof window.ethereum !== 'undefined') {
-        const { signer: walletSigner, provider: walletProvider } = await connectWallet();
-        const walletAddress = await walletSigner.getAddress();
-        setSigner(walletSigner);
-        setProvider(walletProvider);
-        setWalletConnected(true);
-        setWalletAddress(walletAddress);
-        await checkIfOwner(walletSigner);
+      if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
+        const provider = window.ethereum || window.web3.currentProvider;
+        if (provider) {
+          const { signer: walletSigner, provider: walletProvider } = await connectWallet();
+          const walletAddress = await walletSigner.getAddress();
+          setSigner(walletSigner);
+          setProvider(walletProvider);
+          setWalletConnected(true);
+          setWalletAddress(walletAddress);
+          await checkIfOwner(walletSigner);
+        } else {
+          alert('No Ethereum provider found. Install MetaMask or try another wallet!');
+        }
       } else {
         alert('Please install MetaMask or use the MetaMask mobile app!');
       }
@@ -40,6 +45,7 @@ function App() {
       setLoading(false);
     }
   };
+  
 
   const capture = useCallback(() => {
     const imageSrc = webcamRef.current.getScreenshot();
