@@ -23,19 +23,24 @@ function App() {
   const handleConnectWallet = async () => {
     setLoading(true);
     try {
+      if (isMobile()) {
+        // Check if MetaMask is installed on mobile
+        if (typeof window.ethereum === 'undefined') {
+          // Open MetaMask directly with a deep link
+          window.location.href = 'https://metamask.app.link/dapp/https://kichuman28.github.io/ipfs/';
+          return;
+        }
+      }
+      
       if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
         const provider = window.ethereum || window.web3.currentProvider;
-        if (provider) {
-          const { signer: walletSigner, provider: walletProvider } = await connectWallet();
-          const walletAddress = await walletSigner.getAddress();
-          setSigner(walletSigner);
-          setProvider(walletProvider);
-          setWalletConnected(true);
-          setWalletAddress(walletAddress);
-          await checkIfOwner(walletSigner);
-        } else {
-          alert('No Ethereum provider found. Install MetaMask or try another wallet!');
-        }
+        const { signer: walletSigner, provider: walletProvider } = await connectWallet();
+        const walletAddress = await walletSigner.getAddress();
+        setSigner(walletSigner);
+        setProvider(walletProvider);
+        setWalletConnected(true);
+        setWalletAddress(walletAddress);
+        await checkIfOwner(walletSigner);
       } else {
         alert('Please install MetaMask or use the MetaMask mobile app!');
       }
@@ -45,6 +50,23 @@ function App() {
       setLoading(false);
     }
   };
+  
+  // Utility function to detect if user is on mobile
+  const isMobile = () => {
+    const toMatch = [
+      /Android/i,
+      /webOS/i,
+      /iPhone/i,
+      /iPad/i,
+      /iPod/i,
+      /BlackBerry/i,
+      /Windows Phone/i
+    ];
+    return toMatch.some((toMatchItem) => {
+      return navigator.userAgent.match(toMatchItem);
+    });
+  };
+  
   
 
   const capture = useCallback(() => {
