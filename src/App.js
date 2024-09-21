@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { connectWallet } from './utils/wallet';
 import { contractABI, contractAddress } from './utils/contract';
 import { ethers } from 'ethers';
 import OwnerInterface from './components/OwnerInterface';
 import UserInterface from './components/UserInterface';
+import LandingPage from './LandingPage'; // Import the LandingPage
 
 function App() {
   const [walletConnected, setWalletConnected] = useState(false);
@@ -17,14 +19,12 @@ function App() {
     setLoading(true);
     try {
       if (isMobile()) {
-        // Check if MetaMask is installed on mobile
         if (typeof window.ethereum === 'undefined') {
-          // Open MetaMask directly with a deep link
           window.location.href = 'https://metamask.app.link/dapp/https://kichuman28.github.io/ipfs/';
           return;
         }
       }
-      
+
       if (typeof window.ethereum !== 'undefined' || typeof window.web3 !== 'undefined') {
         const provider = window.ethereum || window.web3.currentProvider;
         const { signer: walletSigner, provider: walletProvider } = await connectWallet();
@@ -43,21 +43,10 @@ function App() {
       setLoading(false);
     }
   };
-  
-  // Utility function to detect if user is on mobile
+
   const isMobile = () => {
-    const toMatch = [
-      /Android/i,
-      /webOS/i,
-      /iPhone/i,
-      /iPad/i,
-      /iPod/i,
-      /BlackBerry/i,
-      /Windows Phone/i
-    ];
-    return toMatch.some((toMatchItem) => {
-      return navigator.userAgent.match(toMatchItem);
-    });
+    const toMatch = [/Android/i, /webOS/i, /iPhone/i, /iPad/i, /iPod/i, /BlackBerry/i, /Windows Phone/i];
+    return toMatch.some((toMatchItem) => navigator.userAgent.match(toMatchItem));
   };
 
   const checkIfOwner = async (signer) => {
@@ -72,28 +61,38 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-blue-400 via-teal-400 to-green-400 text-white flex flex-col items-center justify-center p-4 sm:p-8">
-      <h1 className="text-4xl font-bold mb-8 animate-fade-in text-center">Traffix</h1>
+    <Router>
+      <Routes>
+        {/* Define route for the LandingPage */}
+        <Route path="/ipfs" element={<LandingPage />} />
+        
+        {/* Define route for the main wallet connection app */}
+        <Route path="/app" element={
+          <div className="min-h-screen bg-gradient-to-r from-blue-400 via-teal-400 to-green-400 text-white flex flex-col items-center justify-center p-4 sm:p-8">
+            <h1 className="text-4xl font-bold mb-8 animate-fade-in text-center">Traffix</h1>
 
-      {!walletConnected ? (
-        <button
-          className={`bg-teal-500 hover:bg-teal-600 px-6 py-2 rounded-lg text-white transition-all duration-300 ${loading ? 'animate-pulse' : ''}`}
-          onClick={handleConnectWallet}
-          disabled={loading}
-        >
-          {loading ? 'Connecting...' : 'Connect Wallet'}
-        </button>
-      ) : (
-        <div className="w-full max-w-lg">
-          <p className="text-lg mb-4 text-center">Connected to wallet: {walletAddress}</p>
-          {isOwner ? (
-            <OwnerInterface />
-          ) : (
-            <UserInterface walletAddress={walletAddress} signer={signer} />
-          )}
-        </div>
-      )}
-    </div>
+            {!walletConnected ? (
+              <button
+                className={`bg-teal-500 hover:bg-teal-600 px-6 py-2 rounded-lg text-white transition-all duration-300 ${loading ? 'animate-pulse' : ''}`}
+                onClick={handleConnectWallet}
+                disabled={loading}
+              >
+                {loading ? 'Connecting...' : 'Connect Wallet'}
+              </button>
+            ) : (
+              <div className="w-full max-w-lg">
+                <p className="text-lg mb-4 text-center">Connected to wallet: {walletAddress}</p>
+                {isOwner ? (
+                  <OwnerInterface />
+                ) : (
+                  <UserInterface walletAddress={walletAddress} signer={signer} />
+                )}
+              </div>
+            )}
+          </div>
+        } />
+      </Routes>
+    </Router>
   );
 }
 
